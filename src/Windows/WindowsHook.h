@@ -22,8 +22,24 @@
 #include <InGameOverlay/RendererHook.h>
 
 #include "../InternalIncludes.h"
+#include "../mpmc_bounded_queue.h"
 
 namespace InGameOverlay {
+
+struct WindowsHookEvent_t
+{
+    HWND hWnd;
+    UINT msg;
+    WPARAM wParam;
+    LPARAM lParam;
+
+    inline WindowsHookEvent_t()
+    {}
+
+    inline WindowsHookEvent_t(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) :
+        hWnd(hWnd), msg(msg), wParam(wParam), lParam(lParam)
+    {}
+};
 
 class WindowsHook_t :
     public BaseHook_t
@@ -49,9 +65,11 @@ private:
     std::function<void()> _KeyCombinationCallback;
     std::set<int> _NativeKeyCombination;
     bool _KeyCombinationPushed;
+    mpmc_bounded_queue<WindowsHookEvent_t> _WindowEvents;
 
     // Functions
     WindowsHook_t();
+    void _AppendEvent(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     void _RawEvent(RAWINPUT& raw);
     bool _HandleEvent(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
     decltype(::TranslateMessage)* _TranslateMessage;
